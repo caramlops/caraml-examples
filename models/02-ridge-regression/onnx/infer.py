@@ -15,7 +15,7 @@ ONNX_MODEL_PATH = Path(__file__).parent / "model.onnx"
 
 def main():
     session = ort.InferenceSession(str(ONNX_MODEL_PATH))
-    sample = np.array([[1.0, -1.0, 0.5]], dtype=np.float32)
+    sample = np.array([[1.0, -1.0, 0.5, 0.0, 0.0]], dtype=np.float32)
     log.debug(f"sample shape={sample.shape}")
 
     # TODO(you): run inference with `session`.

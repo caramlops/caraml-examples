@@ -1,6 +1,6 @@
-"""Exports the trained torch linear-regression model to ONNX.
+"""Exports the trained torch ridge-regression model to ONNX.
 
-Run models/01-linear-regression/torch/train.py first so torch/model.pt
+Run models/02-ridge-regression/torch/train.py first so torch/model.pt
 exists.
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 import torch
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "torch"))
-from model import LinearRegressionModule
+from model import RidgeRegressionModule
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -21,11 +21,11 @@ log = logging.getLogger(__name__)
 
 TORCH_MODEL_PATH = Path(__file__).parent.parent / "torch" / "model.pt"
 ONNX_MODEL_PATH = Path(__file__).parent / "model.onnx"
-N_FEATURES = 3
+N_FEATURES = 5
 
 
 def main():
-    model = LinearRegressionModule(n_features=N_FEATURES)
+    model = RidgeRegressionModule(n_features=N_FEATURES)
     model.load_state_dict(torch.load(TORCH_MODEL_PATH, weights_only=True))
     model.eval()
 

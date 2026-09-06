@@ -38,7 +38,8 @@ shim, file split, how much to leave as a placeholder), copy what it does.
      `X_test`, `y_test`, or whatever's appropriate to the model) AND as
      `data/train.csv` / `data/test.csv` for the pandas runtime to read
      directly with `pd.read_csv`.
-   - Print a short summary (row counts, paths written) when run.
+   - Log a short summary (row counts, paths written) when run — see step 4
+     for the logging pattern.
 
 4. **For each runtime, write three files** (two for onnx: `export.py`,
    `infer.py`):
@@ -57,12 +58,12 @@ shim, file split, how much to leave as a placeholder), copy what it does.
      *and* a custom layer) — more than that dilutes what's being practiced.
    - `train.py`: loads data via the shim (see below), builds the model,
      fits/trains it, evaluates on the test split with a sensible metric,
-     prints results, and saves the fitted parameters next to itself
+     logs results, and saves the fitted parameters next to itself
      (`model.npz`/`model.pt`/`model.json`, whatever fits the runtime).
      Fully implemented — this file must run correctly once the `model.py`
      placeholder is filled in, with no further edits needed.
    - `infer.py`: loads the saved parameters, runs one example prediction,
-     prints it. Fully implemented.
+     logs it. Fully implemented.
    - Import pattern for pulling in sibling `model.py`:
      ```python
      from pathlib import Path
@@ -70,6 +71,17 @@ shim, file split, how much to leave as a placeholder), copy what it does.
      sys.path.insert(0, str(Path(__file__).parent))
      from model import <ModelClass>
      ```
+   - Logging: `model.py` just does `import logging` + `log =
+     logging.getLogger(__name__)` (no config — it's a library). `train.py`/
+     `infer.py` additionally call `logging.basicConfig(level=os.environ.get(
+     "CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s")`
+     once, near the top. Use `log.info(...)` wherever you would have
+     `print(...)`ed a result (rows loaded, epoch loss, test metric, save
+     path), and `log.debug(f"X shape={X.shape}")`-style calls (f-strings,
+     not `%s`-style) after loading data / around the placeholder's core
+     operation, so filling in the placeholder comes with
+     `CARAML_LOGLEVEL=DEBUG` shape visibility for free. See `CLAUDE.md`'s
+     Debugging/logging convention.
 
 5. **Write the model's `README.md`** at `models/<NN>-<slug>/README.md`:
    what the model is, the core formula/algorithm in plain terms, which
@@ -85,6 +97,8 @@ shim, file split, how much to leave as a placeholder), copy what it does.
    (pandas, scipy, tensorflow, onnx, onnxruntime, etc.), add it under
    `[project.dependencies]` and tell the user to run `uv lock && uv sync`
    — don't run heavy installs yourself without asking.
+
+8. **Format**: run `uv run black .` before finishing.
 
 ## What NOT to do
 

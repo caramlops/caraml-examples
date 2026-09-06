@@ -1,5 +1,9 @@
+import logging
+
 import numpy as np
 from scipy.optimize import least_squares
+
+log = logging.getLogger(__name__)
 
 
 class LinearRegressionLSQ:
@@ -11,6 +15,8 @@ class LinearRegressionLSQ:
         self.params: np.ndarray | None = None  # [w_0..w_{k-1}, bias]
 
     def _residuals(self, params: np.ndarray, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        log.debug(f"params={params}")
+
         # TODO(you): return the residual vector (predictions - y) for the
         # current parameter guess `params`.
         #   - params[:-1] are the weights (shape (n_features,))
@@ -20,6 +26,7 @@ class LinearRegressionLSQ:
         raise NotImplementedError("Implement the residual function for least_squares")
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearRegressionLSQ":
+        log.debug(f"X shape={X.shape}, y shape={y.shape}")
         x0 = np.zeros(self.n_features + 1)
         result = least_squares(self._residuals, x0, args=(X, y))
         self.params = result.x

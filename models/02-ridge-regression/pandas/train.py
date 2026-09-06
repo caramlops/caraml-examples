@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionOLS
+from model import RidgeRegression
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 MODEL_PATH = Path(__file__).parent / "model.json"
+ALPHA = 5.0
 
 
 def main():
@@ -24,7 +25,7 @@ def main():
     feature_columns = [c for c in train_df.columns if c != "y"]
     log.debug(f"train_df shape={train_df.shape}, test_df shape={test_df.shape}")
 
-    model = LinearRegressionOLS(feature_columns)
+    model = RidgeRegression(feature_columns, alpha=ALPHA)
     model.fit(train_df)
 
     preds = model.predict(test_df)

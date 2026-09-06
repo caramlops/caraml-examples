@@ -1,4 +1,8 @@
+import logging
+
 import pandas as pd
+
+log = logging.getLogger(__name__)
 
 
 class LinearRegressionOLS:
@@ -12,6 +16,8 @@ class LinearRegressionOLS:
         self.bias: float | None = None
 
     def fit(self, df: pd.DataFrame) -> "LinearRegressionOLS":
+        log.debug(f"df shape={df.shape}")
+
         # TODO(you): implement OLS via mean-centering.
         #
         #   1. X = df[self.feature_columns], y = df[self.target_column].
@@ -22,6 +28,9 @@ class LinearRegressionOLS:
         #      `.values` and use numpy (`np.linalg.solve` or `.lstsq`) here.
         #   4. Recover the intercept: bias = y.mean() - weights @ X.mean().
         #   5. Store weights as a pd.Series indexed by self.feature_columns.
+        #
+        # Sprinkle log.debug(f"X_centered shape={X_centered.shape}") etc. as
+        # you go -- run with CARAML_LOGLEVEL=DEBUG to see them.
         raise NotImplementedError("Implement the OLS solver using pandas + numpy")
 
     def predict(self, df: pd.DataFrame) -> pd.Series:

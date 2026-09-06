@@ -7,17 +7,18 @@ import numpy as np
 import tensorflow as tf
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionModule
+from model import RidgeRegressionModule
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
 )
 log = logging.getLogger(__name__)
 
-DATA_PATH = Path(__file__).parent.parent / "data" / "linear_regression.npz"
+DATA_PATH = Path(__file__).parent.parent / "data" / "ridge_regression.npz"
 MODEL_PATH = Path(__file__).parent / "model.npz"
 EPOCHS = 200
 LR = 0.05
+ALPHA = 5.0
 
 
 def main():
@@ -28,17 +29,17 @@ def main():
     y_test = tf.constant(data["y_test"], dtype=tf.float32)
     log.debug(f"X_train shape={X_train.shape}, X_test shape={X_test.shape}")
 
-    model = LinearRegressionModule(n_features=X_train.shape[1])
+    model = RidgeRegressionModule(n_features=X_train.shape[1])
     optimizer = tf.optimizers.SGD(learning_rate=LR)
 
     for epoch in range(EPOCHS):
         with tf.GradientTape() as tape:
             preds = model(X_train)
-            loss = tf.reduce_mean(tf.square(preds - y_train))
+            loss = tf.reduce_mean(tf.square(preds - y_train)) + model.l2_penalty(ALPHA)
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         if epoch % 50 == 0:
-            log.info(f"epoch {epoch}: train MSE {loss.numpy():.4f}")
+            log.info(f"epoch {epoch}: train loss (MSE + penalty) {loss.numpy():.4f}")
 
     test_preds = model(X_test)
     test_mse = tf.reduce_mean(tf.square(test_preds - y_test)).numpy()

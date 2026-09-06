@@ -1,4 +1,8 @@
+import logging
+
 import tensorflow as tf
+
+log = logging.getLogger(__name__)
 
 
 class LinearRegressionModule(tf.Module):
@@ -8,6 +12,8 @@ class LinearRegressionModule(tf.Module):
         self.bias = tf.Variable(tf.zeros([1]), name="bias")
 
     def __call__(self, x: tf.Tensor) -> tf.Tensor:
+        log.debug(f"x shape={x.shape}")
+
         # TODO(you): implement y = x @ weights + bias.
         #   - x has shape (batch, n_features)
         #   - self.weights has shape (n_features, 1)

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionLSQ
+from model import RidgeRegression
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -14,15 +14,19 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 MODEL_PATH = Path(__file__).parent / "model.npz"
-N_FEATURES = 3
+
+
+def load_model() -> RidgeRegression:
+    params = np.load(MODEL_PATH)
+    model = RidgeRegression()
+    model.weights = params["weights"]
+    model.bias = float(params["bias"])
+    return model
 
 
 def main():
-    data = np.load(MODEL_PATH)
-    model = LinearRegressionLSQ(n_features=N_FEATURES)
-    model.params = data["params"]
-
-    sample = np.array([[1.0, -1.0, 0.5]])
+    model = load_model()
+    sample = np.array([[1.0, -1.0, 0.5, 0.0, 0.0]])
     prediction = model.predict(sample)
     log.info(f"Prediction for {sample.tolist()}: {prediction.tolist()}")
 

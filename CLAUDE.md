@@ -63,6 +63,33 @@ at the repo root. Datasets and trained model artifacts are regenerable
   split without re-implementing it.
 - Prefer synthetic, seeded data (reproducible, no network dependency) unless
   a real dataset materially matters to what's being learned.
+- **Debugging/logging**: use the stdlib `logging` module instead of ad hoc
+  `print()` — no shared helper module, no extra imports, just:
+  ```python
+  # model.py (a library, never run directly): just get a logger.
+  import logging
+  log = logging.getLogger(__name__)
+  ```
+  ```python
+  # train.py / infer.py (the entry point): configure it once, level from env.
+  import logging
+  import os
+  logging.basicConfig(level=os.environ.get("CARAML_LOGLEVEL", "INFO"),
+                       format="%(levelname)s %(name)s: %(message)s")
+  log = logging.getLogger(__name__)
+  ```
+  `log.info(...)` for the always-on run narration (rows loaded, epoch loss,
+  test MSE, save paths) that used to be `print()`. `log.debug(...)` for the
+  "print the shape while I figure out this placeholder" habit — e.g.
+  `log.debug(f"X shape={X.shape}")`. Use f-strings, not `%s`-style — it's
+  silent by default and only shows up with
+  `CARAML_LOGLEVEL=DEBUG uv run python ...`, so it's fine to
+  leave those calls in permanently rather than deleting them once the
+  placeholder works.
+- **Formatting**: run `uv run black .` before committing (line length 110,
+  configured in `pyproject.toml`'s `[tool.black]`). No import-sorting or
+  linting tool beyond that — this repo optimizes for readability while
+  learning, not enforcement.
 
 ## Skills
 
