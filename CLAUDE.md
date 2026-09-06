@@ -36,9 +36,9 @@ models/
 Each numbered directory is one model or paper. Numbering follows learning
 order from `CHECKLIST.md`, not difficulty or category.
 
-`image_classification_pytorch.py`, `serving.py`, `model.pth`, `data/` at the
-repo root predate this structure and are standalone scratch examples — not
-part of the numbered model corpus. Leave them where they are.
+Everything lives under `models/` — there are no standalone scratch scripts
+at the repo root. Datasets and trained model artifacts are regenerable
+(`.gitignore`d) and never need to be preserved.
 
 ## Conventions
 
