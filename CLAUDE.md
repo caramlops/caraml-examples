@@ -53,7 +53,7 @@ at the repo root. Datasets and trained model artifacts are regenerable
   and the shapes involved. The goal is that filling in one function makes the
   whole script work end-to-end.
 - **Self-contained scripts**: each runtime's `train.py`/`infer.py` is run
-  directly (`python models/01-linear-regression/numpy/train.py`), not
+  directly (`uv run python models/01-linear-regression/numpy/train.py`), not
   imported as a package (directory names have digits/hyphens and aren't
   valid module names). They import sibling `model.py` via a
   `sys.path.insert(0, str(Path(__file__).parent))` shim — copy that pattern.

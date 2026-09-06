@@ -22,16 +22,16 @@ per runtime** — the actual mathematical step. Fill it in, then run
 
 ```bash
 # once, shared by every runtime:
-python models/01-linear-regression/data/make_dataset.py
+uv run python models/01-linear-regression/data/make_dataset.py
 
 # any runtime, e.g. numpy:
-python models/01-linear-regression/numpy/train.py
-python models/01-linear-regression/numpy/infer.py
+uv run python models/01-linear-regression/numpy/train.py
+uv run python models/01-linear-regression/numpy/infer.py
 
 # onnx depends on torch having been trained first:
-python models/01-linear-regression/torch/train.py
-python models/01-linear-regression/onnx/export.py
-python models/01-linear-regression/onnx/infer.py
+uv run python models/01-linear-regression/torch/train.py
+uv run python models/01-linear-regression/onnx/export.py
+uv run python models/01-linear-regression/onnx/infer.py
 ```
 
 Each runtime's `train.py` prints test-set MSE — since every runtime fits the

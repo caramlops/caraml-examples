@@ -74,7 +74,7 @@ shim, file split, how much to leave as a placeholder), copy what it does.
 5. **Write the model's `README.md`** at `models/<NN>-<slug>/README.md`:
    what the model is, the core formula/algorithm in plain terms, which
    runtimes implement it, exactly what's a placeholder in each vs. fully
-   implemented, and how to run each (`python models/<NN>-<slug>/<runtime>/train.py`
+   implemented, and how to run each (`uv run python models/<NN>-<slug>/<runtime>/train.py`
    then `infer.py`, noting onnx depends on torch having been trained first).
    Link out to any paper/reference the model comes from if relevant.
 
@@ -83,8 +83,8 @@ shim, file split, how much to leave as a placeholder), copy what it does.
 
 7. **Dependencies**: if a runtime needs a package not yet in `pyproject.toml`
    (pandas, scipy, tensorflow, onnx, onnxruntime, etc.), add it under
-   `[tool.poetry.dependencies]` and tell the user to run `poetry lock &&
-   poetry install` — don't run heavy installs yourself without asking.
+   `[project.dependencies]` and tell the user to run `uv lock && uv sync`
+   — don't run heavy installs yourself without asking.
 
 ## What NOT to do
 
@@ -96,4 +96,4 @@ shim, file split, how much to leave as a placeholder), copy what it does.
   implementation is self-contained and idiomatic to that library, even if
   that means some duplication.
 - Don't add a `requirements.txt` or per-model virtualenv — this repo uses
-  one poetry environment for everything under it.
+  one `uv`-managed environment for everything under it.
