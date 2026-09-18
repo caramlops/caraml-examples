@@ -13,20 +13,21 @@ class LinearRegressionOLS:
         self.bias: float | None = None
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearRegressionOLS":
-        log.debug(f"X shape={X.shape}, y shape={y.shape}")
+        X_aug = np.c_[X, np.ones(X.shape[0])]  # add a factor for bias
+        X_aug_t = X_aug.T
 
-        X_aug = np.c_[X, np.ones(X.shape[0])]
-        X_aug_t = X_aug.transpose()
+        # (p + 1, p + 1), each side is p factors + 1 bias factor
         X_sq = X_aug_t @ X_aug
 
-        log.debug(f"X_aug shape={X_aug.shape}, X_aug_t shape={X_aug_t.shape}, X_sq shape={X_sq.shape}")
+        log.debug(f"X_aug={X_aug.shape} X_sq={
+                  X_sq.shape}, cond={np.linalg.cond(X_sq):.2e}")
 
-        w_aug = np.linalg.inv(X_sq) @ X_aug_t @ y
-
-        log.debug(f"w_aug={w_aug}")
+        # solve does LU decomposition
+        # d-RSS / d-beta = 0 => X_sq @ beta = X_aug_t @ y
+        w_aug = np.linalg.solve(X_sq, X_aug_t @ y)
 
         self.weights = w_aug[:-1]
-        self.bias = w_aug[-1]
+        self.bias = float(w_aug[-1])
 
         return self
 

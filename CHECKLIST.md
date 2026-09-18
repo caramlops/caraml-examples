@@ -6,8 +6,8 @@ Status values: `scaffolded` (placeholders generated, not yet implemented),
 
 | # | Name | Type | Status | Path |
 |---|------|------|--------|------|
-| 01 | Linear regression | model | scaffolded | `models/01-linear-regression/` |
-| 02 | Ridge regression | model | scaffolded | `models/02-ridge-regression/` |
+| 01 | Linear regression | model | implemented | `models/01-linear-regression/` |
+| 02 | Ridge regression | model | implemented | `models/02-ridge-regression/` |
 
 Add new rows as you decide what's next — via the `new-model` or
 `paper-implementation` skills, or by hand.

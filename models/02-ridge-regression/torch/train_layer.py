@@ -1,4 +1,4 @@
-from model import RidgeRegressionModule
+from model_layer import RidgeRegressionLayer
 import logging
 import os
 import sys
@@ -15,7 +15,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "ridge_regression.npz"
-MODEL_PATH = Path(__file__).parent / "model.pt"
+MODEL_PATH = Path(__file__).parent / "model_layer.pt"
 EPOCHS = 200
 LR = 0.05
 ALPHA = 5.0
@@ -29,7 +29,7 @@ def main():
     y_test = torch.tensor(data["y_test"], dtype=torch.float32)
     log.debug(f"X_train shape={X_train.shape}, X_test shape={X_test.shape}")
 
-    model = RidgeRegressionModule(n_features=X_train.shape[1])
+    model = RidgeRegressionLayer(n_features=X_train.shape[1])
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
     mse_fn = torch.nn.MSELoss()
 
@@ -47,7 +47,8 @@ def main():
 
     with torch.no_grad():
         test_mse = mse_fn(model(X_test), y_test).item()
-    log.info(f"weights={model.weights.detach()}, bias={model.bias.detach()}")
+    log.info(f"weights={model.linear.weight.detach()}, bias={
+             model.linear.bias.detach()}")
     log.info(f"Test MSE: {test_mse:.4f}")
 
     torch.save(model.state_dict(), MODEL_PATH)

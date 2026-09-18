@@ -165,7 +165,12 @@ cython_debug/
 # data/make_dataset.py and each runtime's train.py)
 models/**/data/*.npz
 models/**/data/*.csv
-models/**/model.npz
-models/**/model.pt
-models/**/model.json
-models/**/model.onnx
+models/**/model*.npz
+models/**/model*.pt
+models/**/model*.json
+models/**/model*.onnx
+models/**/model*.onnx.data
+models/**/model*.keras
+
+# macOS
+.DS_Store

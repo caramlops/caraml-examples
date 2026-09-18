@@ -23,7 +23,13 @@ def main():
     #   returns every output, and input_feed maps the input tensor's name
     #   (session.get_inputs()[0].name) to `sample`. Log the prediction with
     #   log.info(...).
-    raise NotImplementedError("Implement the onnxruntime inference call")
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
+    log.info(f"Input name, output name: {(input_name, output_name)}")
+
+    result = session.run([output_name], {input_name: sample})
+
+    log.info(f"Prediction for {sample.tolist()}: {result[0].tolist()}")
 
 
 if __name__ == "__main__":

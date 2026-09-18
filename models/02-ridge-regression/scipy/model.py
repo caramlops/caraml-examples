@@ -1,46 +1,59 @@
 import logging
 
 import numpy as np
-from scipy.optimize import least_squares
+from scipy import linalg
 
 log = logging.getLogger(__name__)
 
 
-class RidgeRegressionLSQ:
-    """Ridge fit via scipy.optimize.least_squares using the classic
-    "augmented residuals" trick: appending sqrt(alpha) * weights to the
-    residual vector reproduces the alpha * sum(weights^2) penalty once
-    least_squares sums the squared residuals."""
+class RidgeRegression:
+    """Ridge fit via the closed-form normal equation, same math as the numpy
+    runtime, but solved with scipy.linalg instead of numpy.linalg."""
 
-    def __init__(self, n_features: int, alpha: float = 1.0):
-        self.n_features = n_features
+    def __init__(self, alpha: float = 1.0):
         self.alpha = alpha
-        self.params: np.ndarray | None = None  # [w_0..w_{k-1}, bias]
+        self.weights: np.ndarray | None = None
+        self.bias: float | None = None
 
-    def _residuals(self, params: np.ndarray, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        log.debug(f"params={params}")
-
-        # TODO(you): return the CONCATENATION of two blocks:
-        #   1. the ordinary prediction residuals: (X @ weights + bias) - y,
-        #      shape (n_samples,) -- same as the plain-OLS scipy runtime.
-        #   2. sqrt(self.alpha) * weights, shape (n_features,) -- squaring
-        #      and summing this block inside least_squares' objective gives
-        #      exactly self.alpha * sum(weights**2), the ridge penalty.
-        #      (weights = params[:-1], bias = params[-1]; the bias is
-        #      intentionally left out of this second block -- it's never
-        #      penalized.)
-        # Use np.concatenate([block1, block2]).
-        raise NotImplementedError("Implement the ridge-augmented residual function")
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "RidgeRegressionLSQ":
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "RidgeRegression":
         log.debug(f"X shape={X.shape}, y shape={y.shape}")
-        x0 = np.zeros(self.n_features + 1)
-        result = least_squares(self._residuals, x0, args=(X, y))
-        self.params = result.x
+
+        # TODO(you): implement ridge's closed-form solve using
+        # scipy.linalg.solve(...) instead of numpy.linalg.solve.
+        #
+        # X has shape (n_samples, n_features), y has shape (n_samples,).
+        #   1. Augment X with a column of ones (shape (n_samples, n_features+1)),
+        #      same as plain OLS.
+        #   2. Build the penalty matrix: P = self.alpha * np.eye(n_features+1),
+        #      then set P's LAST diagonal entry to 0 -- ridge never shrinks
+        #      the intercept, only the feature weights.
+        #   3. Solve: (X_aug^T X_aug + P) @ w_aug = X_aug^T y via
+        #      scipy.linalg.solve. Note X_aug^T X_aug + P is symmetric
+        #      positive-definite (P only adds to the diagonal), so you can
+        #      pass assume_a="pos" here too, same as the plain-OLS scipy
+        #      runtime.
+        #   4. Split w_aug into self.weights (first n_features entries) and
+        #      self.bias (last entry), as in OLS.
+        num_samples, num_features = X.shape
+
+        X_aug = np.c_[X, np.ones(num_samples)]  # add a factor for bias
+        X_aug_t = X_aug.transpose()
+
+        penalty = self.alpha * np.eye(num_features + 1)
+        penalty[-1] = 0.0
+
+        # (p + 1, p + 1), each side is p factors + 1 bias factor
+        X_sq = X_aug_t @ X_aug
+        log.debug(f"X_aug shape={X_aug.shape}, X_sq shape={X_sq.shape}")
+
+        w_aug = linalg.solve(X_sq + penalty, X_aug_t @ y, assume_a="pos")
+
+        self.weights = w_aug[:-1]
+        self.bias = float(w_aug[-1])
+
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        if self.params is None:
+        if self.weights is None or self.bias is None:
             raise RuntimeError("Call fit() before predict()")
-        weights, bias = self.params[:-1], self.params[-1]
-        return X @ weights + bias
+        return X @ self.weights + self.bias

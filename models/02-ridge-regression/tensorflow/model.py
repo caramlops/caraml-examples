@@ -18,10 +18,4 @@ class RidgeRegressionModule(tf.Module):
         return tf.squeeze(tf.matmul(x, self.weights) + self.bias, axis=-1)
 
     def l2_penalty(self, alpha: float) -> tf.Tensor:
-        # TODO(you): return alpha * tf.reduce_sum(self.weights ** 2) -- the
-        # ridge penalty term. train.py adds this to the MSE loss inside the
-        # GradientTape block, so gradients pull weights toward zero as well
-        # as toward lower prediction error.
-        #   - self.bias is intentionally excluded: only feature weights are
-        #     shrunk, never the intercept.
-        raise NotImplementedError("Implement the L2 penalty term")
+        return alpha * tf.reduce_sum(self.weights**2)

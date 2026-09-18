@@ -52,6 +52,17 @@ at the repo root. Datasets and trained model artifacts are regenerable
   `NotImplementedError`, with a comment describing exactly what to implement
   and the shapes involved. The goal is that filling in one function makes the
   whole script work end-to-end.
+  - **Exception — torch and tensorflow's training loop is also a
+    placeholder**, in `train.py` itself (and `train_layer.py`/
+    `train_keras.py`, where those exist). For these two runtimes the loop
+    body genuinely *is* a second significant piece — autograd/
+    `GradientTape` mechanics (`zero_grad`/`backward`/`step`, or
+    `GradientTape`+`tape.gradient`+`apply_gradients`, or Keras's
+    `compile`+`fit`) are as central to learning the framework as the
+    forward pass is, unlike numpy/pandas/scipy where `train.py` is pure
+    boilerplate around a one-shot solve. `torch/model_raw.py`'s `_step()`
+    already covers this for the raw-autograd alternative — don't add a
+    second loop placeholder to its `train_raw.py`.
 - **Self-contained scripts**: each runtime's `train.py`/`infer.py` is run
   directly (`uv run python models/01-linear-regression/numpy/train.py`), not
   imported as a package (directory names have digits/hyphens and aren't
@@ -90,6 +101,26 @@ at the repo root. Datasets and trained model artifacts are regenerable
   configured in `pyproject.toml`'s `[tool.black]`). No import-sorting or
   linting tool beyond that — this repo optimizes for readability while
   learning, not enforcement.
+- **Alternative solutions (optional)**: a model can practice more than one
+  *way* of arriving at the same result, as extra files living inside an
+  existing runtime folder — never a new top-level runtime — following the
+  same one-placeholder-per-file rule as everything else. Two recognized
+  kinds, add only when they're actually worth practicing for this model:
+  - **Training method** (`model_gd.py` + `train_gd.py` in `numpy/`):
+    imperative gradient descent as the manual-loop counterpart to a
+    closed-form solve. Only when the model has a real closed form to
+    contrast against (e.g. linear/ridge regression) — skip it otherwise.
+  - **Framework abstraction level** (`model_layer.py`/`model_raw.py` in
+    `torch/`, `model_keras.py` in `tensorflow/`): the same forward pass
+    built from a pre-built layer (`nn.Linear`, Keras `Dense`) or from raw
+    tensors with no `nn.Module`/`tf.Module` at all, contrasted against the
+    default `model.py`. Only when a single-layer version still teaches
+    something — skip it once the "real" architecture needs more than one
+    layer, at which point it stops being a contrast and becomes a second
+    implementation to maintain.
+  See `.claude/skills/new-model/SKILL.md` for the file-naming and
+  construction details (e.g. Keras's zero-init and full-batch `fit()`
+  gotchas) — this bullet is the policy for *when*, the skill has the *how*.
 
 ## Skills
 

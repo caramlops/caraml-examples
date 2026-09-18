@@ -17,21 +17,23 @@ class RidgeRegression:
     def fit(self, X: np.ndarray, y: np.ndarray) -> "RidgeRegression":
         log.debug(f"X shape={X.shape}, y shape={y.shape}")
 
-        # TODO(you): implement ridge's closed-form solve.
-        #
-        # X has shape (n_samples, n_features), y has shape (n_samples,).
-        #   1. Augment X with a column of ones (shape (n_samples, n_features+1)),
-        #      same as plain OLS.
-        #   2. Build the penalty matrix: P = self.alpha * np.eye(n_features+1),
-        #      then set P's LAST diagonal entry to 0. Ridge should never
-        #      shrink the intercept -- only the feature weights.
-        #   3. Solve: w_aug = (X_aug^T X_aug + P)^-1 X_aug^T y
-        #      (this is exactly the OLS normal equation with `+ P` added --
-        #      that addition is what keeps the matrix invertible even when
-        #      X^T X is nearly singular from collinear columns).
-        #   4. Split w_aug into self.weights (first n_features entries) and
-        #      self.bias (last entry), as in OLS.
-        raise NotImplementedError("Implement the ridge closed-form solver")
+        num_samples, num_features = X.shape
+
+        X_aug = np.c_[X, np.ones(num_samples)]  # add a factor for bias
+        X_aug_t = X_aug.T
+        X_sq = X_aug_t @ X_aug
+
+        penalty = self.alpha * np.eye(num_features + 1)
+        penalty[-1] = 0.0  # set the last one zero so the bias isn't shrunk
+
+        # solve does LU decomposition
+        # d-RSS / d-beta = 0 => (X_sq + alpha @ I) @ beta = X_aug_t @ y
+        w_aug = np.linalg.solve(X_sq + penalty, X_aug_t @ y)
+
+        self.weights = w_aug[:-1]
+        self.bias = float(w_aug[-1])
+
+        return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         if self.weights is None or self.bias is None:

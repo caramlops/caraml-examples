@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionModule
+from model import LinearRegressionModule  # noqa
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -34,15 +34,19 @@ def main():
 
     for epoch in range(EPOCHS):
         optimizer.zero_grad()
+
         preds = model(X_train)
         loss = loss_fn(preds, y_train)
         loss.backward()
+
         optimizer.step()
+
         if epoch % 50 == 0:
             log.info(f"epoch {epoch}: train MSE {loss.item():.4f}")
 
     with torch.no_grad():
         test_mse = loss_fn(model(X_test), y_test).item()
+    log.info(f"weights={model.weights.detach()}, bias={model.bias.detach()}")
     log.info(f"Test MSE: {test_mse:.4f}")
 
     torch.save(model.state_dict(), MODEL_PATH)

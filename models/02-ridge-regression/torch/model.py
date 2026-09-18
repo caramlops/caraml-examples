@@ -19,10 +19,4 @@ class RidgeRegressionModule(nn.Module):
         return x @ self.weights + self.bias
 
     def l2_penalty(self, alpha: float) -> torch.Tensor:
-        # TODO(you): return alpha * sum(self.weights ** 2) -- the ridge
-        # penalty term. train.py adds this to the MSE loss before calling
-        # .backward(), so gradient descent is pulled toward smaller weight
-        # magnitudes as well as lower prediction error.
-        #   - self.bias is intentionally excluded: only feature weights are
-        #     shrunk, never the intercept.
-        raise NotImplementedError("Implement the L2 penalty term")
+        return alpha * sum(self.weights**2)

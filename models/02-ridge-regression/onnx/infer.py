@@ -18,12 +18,11 @@ def main():
     sample = np.array([[1.0, -1.0, 0.5, 0.0, 0.0]], dtype=np.float32)
     log.debug(f"sample shape={sample.shape}")
 
-    # TODO(you): run inference with `session`.
-    #   Call session.run(output_names, input_feed) where output_names=None
-    #   returns every output, and input_feed maps the input tensor's name
-    #   (session.get_inputs()[0].name) to `sample`. Log the prediction with
-    #   log.info(...).
-    raise NotImplementedError("Implement the onnxruntime inference call")
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
+    result = session.run([output_name], {input_name: sample})
+
+    log.info(f"Prediction for {sample.tolist()}: {result[0].tolist()}")
 
 
 if __name__ == "__main__":

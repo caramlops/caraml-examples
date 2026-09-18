@@ -27,6 +27,17 @@ shim, file split, how much to leave as a placeholder), copy what it does.
    trained model (default to exporting from the torch implementation) and
    runs it via `onnxruntime`, it doesn't train.
 
+   **scipy's role**: when the model has a closed-form solution, scipy
+   solves the *same* closed-form equation as numpy/pandas — just via
+   `scipy.linalg` instead of `numpy.linalg` (e.g. `scipy.linalg.solve(...,
+   assume_a="pos")` for a symmetric positive-definite normal equation). It
+   is not a vehicle for demonstrating iterative/gradient-based optimization
+   — see "Alternative solutions" below for where that practice belongs.
+   Reach for `scipy.optimize.least_squares` instead of `scipy.linalg` only
+   for models that are genuinely nonlinear in their parameters (no normal
+   equation exists at all) — that's a different, rarer case, not the
+   default for anything with a closed form.
+
 3. **Write `data/make_dataset.py` — fully implemented, no placeholders.**
    - Generate (preferred: synthetic, numpy `default_rng` with a fixed seed)
      or download the data appropriate to the model. Only download real data
@@ -62,6 +73,30 @@ shim, file split, how much to leave as a placeholder), copy what it does.
      (`model.npz`/`model.pt`/`model.json`, whatever fits the runtime).
      Fully implemented — this file must run correctly once the `model.py`
      placeholder is filled in, with no further edits needed.
+     - **Exception for torch and tensorflow**: the training loop body
+       itself is a second placeholder here, not fully implemented — set up
+       the model, optimizer/loss, and data (all plumbing), then leave the
+       actual step as `raise NotImplementedError(...)` with a comment
+       spelling out the sequence:
+       - torch: `optimizer.zero_grad()` → `preds = model(X_train)` →
+         `loss = loss_fn(...)` → `loss.backward()` → `optimizer.step()`.
+       - tensorflow: `with tf.GradientTape() as tape:` (compute preds/loss
+         inside it) → `grads = tape.gradient(loss, model.trainable_variables)`
+         → `optimizer.apply_gradients(zip(grads, model.trainable_variables))`.
+       - Keras (`model_keras.py`'s `train_keras.py`, if present): the
+         placeholder is `model.compile(...)` + `model.fit(...)` itself —
+         that pairing *is* the significant Keras idiom being practiced,
+         contrasted against the other two runtimes writing the loop by
+         hand. Keep the zero-init / `batch_size=X_train.shape[0]`
+         scaffolding notes in the comment regardless (see the abstraction-
+         levels section below) — those are plumbing gotchas, not the thing
+         being taught.
+       Reason: for these two runtimes, the autograd/GradientTape training
+       mechanics are as central to what's being learned as the forward
+       pass — unlike numpy/pandas/scipy, where `train.py` really is just
+       boilerplate around a one-shot closed-form solve. Don't add this to
+       `torch/model_raw.py`'s `train_raw.py` — `model_raw.py`'s `_step()`
+       already covers the same ground for that alternative.
    - `infer.py`: loads the saved parameters, runs one example prediction,
      logs it. Fully implemented.
    - Import pattern for pulling in sibling `model.py`:
@@ -99,6 +134,91 @@ shim, file split, how much to leave as a placeholder), copy what it does.
    — don't run heavy installs yourself without asking.
 
 8. **Format**: run `uv run black .` before finishing.
+
+## Alternative solutions (optional): practicing training methods
+
+For models with a closed-form solve, it's often worth also practicing
+*how* you'd fit the same model without one — imperative gradient descent by
+hand, as the numpy-side counterpart to torch/tensorflow's autograd-based
+training loop. When this is pedagogically relevant for the model:
+
+- Add extra files **inside the existing numpy runtime folder** — do not
+  create a new top-level runtime directory. Name them `model_gd.py`
+  (the model class, with a `_step(self, X, residuals)` method as the one
+  placeholder — compute the loss gradient and update parameters in place)
+  and `train_gd.py` (same structure as `train.py`, saving to a distinct
+  `model_gd.npz` so it doesn't clobber the closed-form model's artifact).
+- This is a different *training method* for the same model, not a
+  different library idiom — that's why it lives alongside `numpy/model.py`
+  rather than getting its own runtime directory.
+- Document it in the model's README under its own "Alternative solution"
+  heading, and explicitly point out that torch's existing SGD training loop
+  is the computation-graph-based counterpart — the pairing of `numpy_gd`
+  (manual gradients) and `torch` (autograd) is the point, not a full
+  separate exploration of every optimizer.
+- Don't add this by default to every model — only when the model actually
+  benefits from contrasting a closed-form solve against an iterative one
+  (e.g. linear/ridge regression). Skip it for models that don't have a
+  closed form to contrast against in the first place.
+
+## Alternative solutions (optional): framework abstraction levels
+
+torch and tensorflow both span a range from "raw computation graph" to
+"pre-built layer," and it's worth letting the user practice more than one
+rung of it when the model is simple enough that the layer-construction
+placeholder still teaches something (a single Dense/Linear layer, not a
+whole architecture). Same rule as gradient descent above: extra files
+inside the existing `torch/`/`tensorflow/` folders, not new top-level
+runtimes.
+
+- **torch**: `model.py` (the default) uses `nn.Module` + hand-declared
+  `nn.Parameter`s — a middle rung. Add `model_layer.py` using `nn.Linear`
+  (or the relevant built-in layer) as the high rung, and/or `model_raw.py`
+  using plain `torch.Tensor(requires_grad=True)` with no `nn.Module` at all
+  as the low rung. `model_raw.py`'s placeholder belongs in a `_step()`
+  method (manual `loss.backward()` + `torch.no_grad()` update + manual
+  `.grad.zero_()`), not the forward pass — see `01-linear-regression`'s
+  `torch/model_raw.py` for the worked pattern. This is also the natural
+  successor to the gradient-descent alternative above: numpy_gd computes
+  gradients by hand and updates by hand; `model_raw.py` lets autograd
+  compute gradients but still updates by hand; `model.py`/`model_layer.py`
+  hand both jobs to `torch.optim`.
+- **tensorflow**: `model.py` (the default) uses `tf.Module` + hand-declared
+  `tf.Variable`s — the low rung already. Add `model_keras.py` (a
+  `build_model(n_features)` function, not a class — match Keras's own
+  idiom) using `tf.keras.layers.Dense` as the high rung. Its `train_keras.py`
+  should use `model.compile(...)` + `model.fit(...)`, not a manual
+  `GradientTape` loop — that's the actual point of the Keras rung. Use an
+  explicit `tf.keras.layers.Input(shape=(n_features,))` for the input shape
+  rather than `Dense`'s deprecated `input_shape=` kwarg. Two defaults Keras
+  gets wrong for this repo's purposes — set both explicitly, as scaffolding,
+  not placeholders:
+  - `Dense(..., kernel_initializer="zeros", bias_initializer="zeros")` —
+    Keras defaults to random Glorot-uniform init, but every other runtime
+    here starts from zero, so leaving it random breaks comparability
+    between runtimes' results.
+  - `model.fit(..., batch_size=X_train.shape[0])` — `fit()` defaults to
+    `batch_size=32` (mini-batch SGD across many steps per epoch), while
+    every other runtime does full-batch gradient descent (one step per
+    epoch over the whole training set). Without this, epoch counts and
+    loss trajectories won't line up with the other runtimes at all.
+  - If the model has a regularization term (e.g. ridge's L2 penalty),
+    prefer expressing it declaratively where Keras supports it (e.g.
+    `kernel_regularizer=tf.keras.regularizers.l2(alpha)`) rather than
+    manually adding it to the loss — that contrast (penalty as something
+    you declare vs. something you compute) is itself worth teaching, not
+    just incidental. But if you do this, `model.evaluate()`'s reported loss
+    will include the regularization term too — compute a plain metric by
+    hand (`model.predict(...)` then the raw MSE) if you need a number
+    comparable to the other runtimes' unpenalized test metric.
+- For layer-based files, the placeholder is model *construction*
+  (instantiating the layer), not the forward pass — a pre-built layer owns
+  its own weights/bias internally, so there's nothing left to hand-implement
+  in `forward`/`__call__` once it exists.
+- Skip this for models complex enough that "the layer API version" would
+  mean building a real multi-layer architecture rather than swapping one
+  line — at that point it stops teaching the abstraction-level contrast and
+  just becomes a second full implementation to maintain.
 
 ## What NOT to do
 

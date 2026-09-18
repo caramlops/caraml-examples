@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionLSQ
+from model import LinearRegressionOLS
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -23,15 +23,15 @@ def main():
     X_test, y_test = data["X_test"], data["y_test"]
     log.debug(f"X_train shape={X_train.shape}, X_test shape={X_test.shape}")
 
-    model = LinearRegressionLSQ(n_features=X_train.shape[1])
+    model = LinearRegressionOLS()
     model.fit(X_train, y_train)
 
     preds = model.predict(X_test)
     mse = np.mean((preds - y_test) ** 2)
-    log.info(f"params={model.params}")
+    log.info(f"weights={model.weights}, bias={model.bias}")
     log.info(f"Test MSE: {mse:.4f}")
 
-    np.savez(MODEL_PATH, params=model.params)
+    np.savez(MODEL_PATH, weights=model.weights, bias=model.bias)
     log.info(f"Saved model to {MODEL_PATH}")
 
 

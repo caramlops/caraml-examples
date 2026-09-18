@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import pandas as pd
 
 log = logging.getLogger(__name__)
@@ -20,24 +21,26 @@ class RidgeRegression:
     def fit(self, df: pd.DataFrame) -> "RidgeRegression":
         log.debug(f"df shape={df.shape}")
 
-        # TODO(you): implement ridge via mean-centering.
-        #
-        #   1. X = df[self.feature_columns], y = df[self.target_column].
-        #   2. Center both around their column means (X.mean(), y.mean()).
-        #      Note: centering already removes the intercept from the
-        #      problem, so unlike the numpy runtime there's no diagonal
-        #      entry to zero out -- every remaining weight is a feature
-        #      weight, all fair game for shrinkage.
-        #   3. Solve the ridge normal equation on the centered data:
-        #         weights = (Xc^T Xc + self.alpha * I)^-1 Xc^T yc
-        #      (pull `.values` and use numpy for the linear algebra, as in
-        #      the plain-OLS pandas runtime).
-        #   4. Recover the (unregularized) intercept:
-        #         bias = y.mean() - weights @ X.mean()
-        #   5. Store weights as a pd.Series indexed by self.feature_columns.
-        raise NotImplementedError("Implement the ridge solver using pandas + numpy")
+        X, y = df[self.feature_columns], df[self.target_column]
+        X_mean, y_mean = X.mean(), y.mean()
+        X_centered, y_centered = (X - X_mean).values, (y - y_mean).values
+        X_t = X_centered.T
+        X_sq = X_t @ X_centered
+
+        # dRSS / d-beta = 0 => (X_t @ X) @ beta = X_t @ y
+        weights = np.linalg.solve(X_sq + self.alpha * np.eye(len(self.feature_columns)), X_t @ y_centered)
+        self.weights = pd.Series(weights, index=self.feature_columns)
+
+        self.bias = y_mean - self.weights @ X_mean
+
+        log.debug(f"weights={self.weights} bias={self.bias}")
+        log.debug(f"shapes of weights={
+                  self.weights.shape} bias={self.bias.shape}")
+
+        return self
 
     def predict(self, df: pd.DataFrame) -> pd.Series:
         if self.weights is None or self.bias is None:
             raise RuntimeError("Call fit() before predict()")
+
         return df[self.feature_columns].dot(self.weights) + self.bias

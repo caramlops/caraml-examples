@@ -1,39 +1,37 @@
 import logging
 
 import numpy as np
-from scipy.optimize import least_squares
+from scipy import linalg
 
 log = logging.getLogger(__name__)
 
 
-class LinearRegressionLSQ:
-    """OLS fit via scipy.optimize.least_squares rather than a closed-form
-    solve — the same objective, minimized numerically."""
+class LinearRegressionOLS:
+    """OLS fit via the closed-form normal equation, same math as the numpy
+    runtime, but solved with scipy.linalg instead of numpy.linalg -- it lets
+    you hand the solver a hint about the matrix's structure instead of
+    running a generic solve."""
 
-    def __init__(self, n_features: int):
-        self.n_features = n_features
-        self.params: np.ndarray | None = None  # [w_0..w_{k-1}, bias]
+    def __init__(self):
+        self.weights: np.ndarray | None = None
+        self.bias: float | None = None
 
-    def _residuals(self, params: np.ndarray, X: np.ndarray, y: np.ndarray) -> np.ndarray:
-        log.debug(f"params={params}")
+    def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearRegressionOLS":
+        X_aug = np.c_[X, np.ones(X.shape[0])]  # add a factor for bias
+        X_aug_t = X_aug.transpose()
 
-        # TODO(you): return the residual vector (predictions - y) for the
-        # current parameter guess `params`.
-        #   - params[:-1] are the weights (shape (n_features,))
-        #   - params[-1] is the bias (scalar)
-        #   - X has shape (n_samples, n_features), y has shape (n_samples,)
-        #   - predictions = X @ weights + bias, residuals = predictions - y
-        raise NotImplementedError("Implement the residual function for least_squares")
+        # (p + 1, p + 1), each side is p factors + 1 bias factor
+        X_sq = X_aug_t @ X_aug
+        log.debug(f"X_aug shape={X_aug.shape}, X_sq shape={X_sq.shape}")
 
-    def fit(self, X: np.ndarray, y: np.ndarray) -> "LinearRegressionLSQ":
-        log.debug(f"X shape={X.shape}, y shape={y.shape}")
-        x0 = np.zeros(self.n_features + 1)
-        result = least_squares(self._residuals, x0, args=(X, y))
-        self.params = result.x
+        w_aug = linalg.solve(X_sq, X_aug_t @ y, assume_a="pos")
+
+        self.weights = w_aug[:-1]
+        self.bias = float(w_aug[-1])
+
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
-        if self.params is None:
+        if self.weights is None or self.bias is None:
             raise RuntimeError("Call fit() before predict()")
-        weights, bias = self.params[:-1], self.params[-1]
-        return X @ weights + bias
+        return X @ self.weights + self.bias

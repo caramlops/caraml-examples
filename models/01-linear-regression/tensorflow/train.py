@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 
 sys.path.insert(0, str(Path(__file__).parent))
-from model import LinearRegressionModule
+from model import LinearRegressionModule  # noqa
 
 logging.basicConfig(
     level=os.environ.get("CARAML_LOGLEVEL", "INFO"), format="%(levelname)s %(name)s: %(message)s"
@@ -35,13 +35,16 @@ def main():
         with tf.GradientTape() as tape:
             preds = model(X_train)
             loss = tf.reduce_mean(tf.square(preds - y_train))
+
         grads = tape.gradient(loss, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
+
         if epoch % 50 == 0:
             log.info(f"epoch {epoch}: train MSE {loss.numpy():.4f}")
 
     test_preds = model(X_test)
     test_mse = tf.reduce_mean(tf.square(test_preds - y_test)).numpy()
+    log.info(f"weights={model.weights.numpy()}, bias={model.bias.numpy()}")
     log.info(f"Test MSE: {test_mse:.4f}")
 
     np.savez(MODEL_PATH, weights=model.weights.numpy(), bias=model.bias.numpy())

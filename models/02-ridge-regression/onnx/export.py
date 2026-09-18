@@ -32,13 +32,14 @@ def main():
     dummy_input = torch.zeros(1, N_FEATURES)
     log.debug(f"dummy_input shape={dummy_input.shape}")
 
-    # TODO(you): export `model` to ONNX at ONNX_MODEL_PATH using
-    # torch.onnx.export. Pass `dummy_input` as the example input, name the
-    # input/output tensors "input"/"output", and mark the batch dimension
-    # (axis 0 of both input and output) as dynamic via `dynamic_axes` so the
-    # exported graph accepts any batch size at inference time:
-    #   dynamic_axes={"input": {0: "batch"}, "output": {0: "batch"}}
-    raise NotImplementedError("Implement the torch.onnx.export call")
+    torch.onnx.export(
+        model,
+        (dummy_input,),
+        ONNX_MODEL_PATH,
+        input_names=["input"],
+        output_names=["output"],
+        dynamic_shapes=({0: torch.export.Dim("batch")},),
+    )
 
     log.info(f"Exported ONNX model to {ONNX_MODEL_PATH}")
 
