@@ -9,6 +9,7 @@ Status values: `scaffolded` (placeholders generated, not yet implemented),
 | 01 | Linear regression | model | implemented | `models/01-linear-regression/` |
 | 02 | Ridge regression | model | implemented | `models/02-ridge-regression/` |
 | 03 | Logistic regression (binary + multiclass) | model | scaffolded | `models/03-logistic-regression/` |
+| 04 | Poisson regression (GLM, IRLS) | model | scaffolded | `models/04-poisson-regression/` |
 
 Add new rows as you decide what's next — via the `new-model` or
 `paper-implementation` skills, or by hand.
