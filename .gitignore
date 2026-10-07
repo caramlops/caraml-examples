@@ -166,6 +166,7 @@ cython_debug/
 models/**/data/*.npz
 models/**/data/*.csv
 models/**/data/*.txt
+models/**/data/*.tsv
 models/**/data/*.json
 models/**/model*.npz
 models/**/model*.pt
