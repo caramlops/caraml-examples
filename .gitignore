@@ -175,6 +175,9 @@ models/**/model*.onnx
 models/**/model*.onnx.data
 models/**/model*.keras
 models/**/checkpoint/
+models/**/data/*.tar.gz
+models/**/data/CIFAR-10-images-master/
+models/**/plots/
 
 # macOS
 .DS_Store
