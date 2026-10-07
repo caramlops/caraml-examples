@@ -36,11 +36,19 @@ an alternative here, it's the only option.
 | Runtime | File(s) | Placeholder(s) | Fully implemented |
 |---|---|---|---|
 | numpy | `numpy/model.py` | numerically stable softmax; cross-entropy gradient step | data load, train loop, save/load, accuracy |
-| pandas | `pandas/model.py` | same two, via a DataFrame | CSV load, accuracy, save/load |
 | scipy | `scipy/model.py` | combined cross-entropy loss + analytic gradient for `scipy.optimize.minimize` | fit driver, save/load, accuracy |
 | torch | `torch/model.py`, `torch/train.py` | forward pass (raw logits, no softmax); the training step (`zero_grad`/`backward`/`step`) | data load, save/load, accuracy |
 | tensorflow | `tensorflow/model.py`, `tensorflow/train.py` | forward pass (raw logits); the training step (`GradientTape`/`tape.gradient`/`apply_gradients`) | data load, save/load, accuracy |
 | onnx | `onnx/export.py`, `onnx/infer.py` | `torch.onnx.export` call, `onnxruntime` session run | loading the trained torch model, sample input |
+
+**No pandas runtime here, unlike `01`/`02`.** For OLS/ridge, pandas earned
+its place by practicing a genuinely different *derivation* — mean-centering
+instead of augmenting `X` with a ones-column. Logistic regression has no
+closed form for pandas to derive an alternative to: a pandas runtime here
+would just be the exact same gradient-descent algorithm as `numpy/model.py`,
+with `.values` pulled out of a DataFrame at the boundary and no new
+technique to practice in between. That's not a distinct runtime, it's the
+same file with extra ceremony, so it's dropped.
 
 ## The one gotcha specific to this model: don't apply softmax twice
 
@@ -51,9 +59,9 @@ raw logits and integer class labels directly, and apply softmax internally
 as a single, numerically fused operation combined with the loss. If you
 apply softmax yourself in the forward pass *and* hand the result to one of
 these loss functions, nothing errors — you just silently apply softmax
-twice, and training quietly breaks. `numpy`/`pandas`/`scipy` don't have this
-trap, since they implement softmax and cross-entropy separately by hand
-rather than through a fused loss function.
+twice, and training quietly breaks. `numpy`/`scipy` don't have this trap,
+since they implement softmax and cross-entropy separately by hand rather
+than through a fused loss function.
 
 ## `evaluate.py`: confusion matrix + calibration plot
 

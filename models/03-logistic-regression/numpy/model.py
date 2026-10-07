@@ -22,34 +22,21 @@ class LogisticRegression:
     def _softmax(self, logits: np.ndarray) -> np.ndarray:
         log.debug(f"logits shape={logits.shape}")
 
-        # TODO(you): implement a *numerically stable* softmax over the
-        # last axis.
-        #   - logits has shape (n_samples, n_classes).
-        #   - softmax(z)_k = exp(z_k) / sum_j exp(z_j), applied per row.
-        #   - Subtract each row's max from itself before exponentiating:
-        #     softmax(z) == softmax(z - max(z)) mathematically (the max
-        #     cancels out in the ratio), but without it, exp() of a
-        #     moderately large logit overflows to inf and every
-        #     probability comes out nan. This is the single most common
-        #     bug in a from-scratch softmax.
-        #   - Return shape (n_samples, n_classes), each row summing to 1.
-        raise NotImplementedError("Implement a numerically stable softmax")
+        centered_z = logits - np.max(logits, axis=1, keepdims=True)
+        exps = np.exp(centered_z)
+        sums = np.sum(exps, axis=1, keepdims=True)
+
+        return exps / sums
 
     def _step(self, X: np.ndarray, probs: np.ndarray, Y_onehot: np.ndarray) -> None:
         log.debug(f"weights shape={self.weights.shape}")
 
-        # TODO(you): compute the gradient of the mean cross-entropy loss
-        # w.r.t. weights and bias, then take one gradient-descent step.
-        #   cross-entropy loss = -mean(sum(Y_onehot * log(probs), axis=1))
-        #   The gradient of that loss w.r.t. the *logits* has a famously
-        #   clean closed form: (probs - Y_onehot) / n_samples -- softmax
-        #   and cross-entropy are almost always paired specifically
-        #   because their combined derivative simplifies this much.
-        #   grad_weights = X.T @ (probs - Y_onehot) / n_samples   # (n_features, n_classes)
-        #   grad_bias    = (probs - Y_onehot).mean(axis=0)         # (n_classes,)
-        #   self.weights -= self.lr * grad_weights
-        #   self.bias    -= self.lr * grad_bias
-        raise NotImplementedError("Implement one gradient-descent step")
+        n_samples, _ = X.shape
+
+        grad_weights = X.T @ (probs - Y_onehot) / n_samples
+        grad_bias = (probs - Y_onehot).mean(axis=0)
+        self.weights -= self.lr * grad_weights
+        self.bias -= self.lr * grad_bias
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> "LogisticRegression":
         Y_onehot = np.eye(self.n_classes)[y]

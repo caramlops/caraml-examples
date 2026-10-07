@@ -25,6 +25,12 @@ class LogisticRegression:
         bias = params[n_w:]
         return weights, bias
 
+    @staticmethod
+    def _softmax(logits: np.ndarray) -> np.ndarray:
+        z = logits - logits.max(axis=1, keepdims=True)
+        e = np.exp(z)
+        return e / e.sum(axis=1, keepdims=True)
+
     def _loss_and_grad(
         self, params: np.ndarray, X: np.ndarray, Y_onehot: np.ndarray
     ) -> tuple[float, np.ndarray]:
@@ -56,9 +62,7 @@ class LogisticRegression:
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         logits = X @ self.weights + self.bias
-        z = logits - logits.max(axis=1, keepdims=True)
-        e = np.exp(z)
-        return e / e.sum(axis=1, keepdims=True)
+        return self._softmax(logits)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.predict_proba(X).argmax(axis=1)

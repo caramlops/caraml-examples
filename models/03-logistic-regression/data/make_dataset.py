@@ -18,7 +18,6 @@ implementing softmax + cross-entropy, not data wrangling.
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 DATA_DIR = Path(__file__).parent
 SEED = 42
@@ -72,20 +71,8 @@ def main():
         n_classes=N_CLASSES,
     )
 
-    columns = [f"x{i}" for i in range(X.shape[1])]
-    train_df = pd.DataFrame(X_train, columns=columns)
-    train_df["y"] = y_train
-    test_df = pd.DataFrame(X_test, columns=columns)
-    test_df["y"] = y_test
-
-    train_csv, test_csv = DATA_DIR / "train.csv", DATA_DIR / "test.csv"
-    train_df.to_csv(train_csv, index=False)
-    test_df.to_csv(test_csv, index=False)
-
     print(f"Wrote {len(X_train)} train / {len(X_test)} test rows, {N_CLASSES} classes.")
     print(f"  {npz_path}")
-    print(f"  {train_csv}")
-    print(f"  {test_csv}")
 
 
 if __name__ == "__main__":
